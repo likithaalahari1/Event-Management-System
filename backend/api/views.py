@@ -1,11 +1,12 @@
 import json
 import random
-from datetime import date
+from datetime import datetime, date
+from bson import ObjectId
 
 from django.contrib.auth.hashers import check_password, make_password
-from django.db import transaction
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from mongoengine import NotUniqueError, DoesNotExist
 
 from .models import AppUser, Event, Ticket, TicketTier
 
@@ -26,7 +27,7 @@ def parse_body(request):
 
 def serialize_tier(tier):
     return {
-        "id": tier.id,
+        "id": str(tier.id),
         "name": tier.name,
         "price": tier.price,
         "capacity": tier.capacity,
@@ -35,10 +36,10 @@ def serialize_tier(tier):
 
 
 def serialize_event(event):
-    tiers = list(event.tiers.all())
+    tiers = event.tiers if event.tiers else []
     event_date = event.date.isoformat() if hasattr(event.date, "isoformat") else str(event.date)
     return {
-        "id": event.id,
+        "id": str(event.id),
         "name": event.name,
         "date": event_date,
         "venue": event.venue,
@@ -72,7 +73,7 @@ def serialize_ticket(ticket):
         "eventName": ticket.event.name,
         "venue": ticket.event.venue,
         "date": ticket.event.date.isoformat(),
-        "tierName": ticket.tier.name,
+        "tierName": ticket.tier_name,
         "tickets": ticket.quantity,
         "amount": ticket.amount,
         "qrCode": ticket.qr_code,
@@ -82,7 +83,7 @@ def serialize_ticket(ticket):
 def serialize_user(user):
     date_of_birth = user.date_of_birth
     return {
-        "id": user.id,
+        "id": str(user.id),
         "firstName": user.first_name,
         "lastName": user.last_name,
         "email": user.email,
@@ -93,7 +94,7 @@ def serialize_user(user):
 
 
 def event_collection_payload(selected_event=None):
-    event_items = Event.objects.prefetch_related("tiers")
+    event_items = list(Event.objects.all())
     payload = {
         "events": [serialize_event(item) for item in event_items],
         "recentBookings": recent_bookings(),
@@ -134,23 +135,31 @@ def signup(request):
         return cors_response({"error": "Passwords do not match"}, status=400)
     if len(password) < 6:
         return cors_response({"error": "Password must be at least 6 characters"}, status=400)
-    if AppUser.objects.filter(email=email).exists():
+    
+    try:
+        AppUser.objects.get(email=email)
         return cors_response({"error": "An account with this email already exists"}, status=400)
+    except DoesNotExist:
+        pass
+    
     if date_of_birth:
         try:
-            date_of_birth = date.fromisoformat(date_of_birth)
-        except ValueError:
+            date_of_birth = datetime.fromisoformat(date_of_birth)
+        except (ValueError, TypeError):
             return cors_response({"error": "Enter a valid date of birth"}, status=400)
 
-    user = AppUser.objects.create(
-        first_name=first_name,
-        last_name=last_name,
-        email=email,
-        password=make_password(password),
-        role=role,
-        date_of_birth=date_of_birth,
-        mobile_number=mobile_number,
-    )
+    try:
+        user = AppUser.objects.create(
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            password=make_password(password),
+            role=role,
+            date_of_birth=date_of_birth,
+            mobile_number=mobile_number,
+        )
+    except NotUniqueError:
+        return cors_response({"error": "An account with this email already exists"}, status=400)
 
     return cors_response({"user": serialize_user(user), "message": "Account created"}, status=201)
 
@@ -170,22 +179,26 @@ def login(request):
     if not email or not password:
         return cors_response({"error": "Email and password are required"}, status=400)
 
-    user = AppUser.objects.filter(email=email, role=role).first()
-    if not user or not check_password(password, user.password):
+    try:
+        user = AppUser.objects.get(email=email, role=role)
+        if not check_password(password, user.password):
+            return cors_response({"error": f"Invalid {role} email or password"}, status=401)
+    except DoesNotExist:
         return cors_response({"error": f"Invalid {role} email or password"}, status=401)
 
     return cors_response({"user": serialize_user(user), "message": "Login successful"})
 
 
 def recent_bookings():
+    tickets = Ticket.objects.order_by("-created_at")[:8]
     return [
         {
             "name": ticket.attendee_name,
-            "type": ticket.tier.name,
+            "type": ticket.tier_name,
             "time": "saved booking",
             "amount": ticket.amount,
         }
-        for ticket in Ticket.objects.select_related("tier").order_by("-created_at")[:8]
+        for ticket in tickets
     ]
 
 
@@ -193,11 +206,12 @@ def event_totals(event_items):
     serialized_events = [serialize_event(event) for event in event_items]
     sold = sum(event["ticketsSold"] for event in serialized_events)
     checked_in = sum(event["checkedIn"] for event in serialized_events)
+    revenue = sum(ticket.amount for ticket in Ticket.objects.all())
     return {
         "sold": sold,
         "checkedIn": checked_in,
         "capacity": sum(event["capacity"] for event in serialized_events),
-        "revenue": sum(ticket.amount for ticket in Ticket.objects.all()),
+        "revenue": revenue,
         "waitlist": sum(event["waitlist"] for event in serialized_events),
         "entryRate": round((checked_in / sold) * 100) if sold else 0,
     }
@@ -207,7 +221,7 @@ def events(request):
     if request.method == "OPTIONS":
         return cors_response({})
 
-    event_items = Event.objects.prefetch_related("tiers")
+    event_items = list(Event.objects.all())
     serialized_events = [serialize_event(event) for event in event_items]
     return cors_response({
         "events": serialized_events,
@@ -234,24 +248,32 @@ def create_event(request):
     if not valid_levels:
         return cors_response({"error": "Add at least one booking level"}, status=400)
 
-    with transaction.atomic():
-        event = Event.objects.create(
-            name=data["name"],
-            date=data["date"],
-            venue=data["venue"],
-            capacity=capacity,
-            price=price,
-            image=data.get("image") or Event._meta.get_field("image").default,
-        )
-        for level in valid_levels:
-            TicketTier.objects.create(
-                event=event,
-                name=level["name"],
-                price=int(level["price"]),
-                capacity=int(level["capacity"]),
-            )
+    try:
+        event_date = datetime.fromisoformat(data["date"]) if isinstance(data["date"], str) else data["date"]
+    except (ValueError, TypeError):
+        return cors_response({"error": "Invalid event date"}, status=400)
 
-    event = Event.objects.prefetch_related("tiers").get(id=event.id)
+    event = Event.objects.create(
+        name=data["name"],
+        date=event_date,
+        venue=data["venue"],
+        capacity=capacity,
+        price=price,
+        image=data.get("image") or "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1600&q=85",
+    )
+    
+    # Create ticket tiers as embedded documents
+    tiers = []
+    for level in valid_levels:
+        tier = TicketTier(
+            name=level["name"],
+            price=int(level["price"]),
+            capacity=int(level["capacity"]),
+        )
+        tiers.append(tier)
+    
+    event.tiers = tiers
+    event.save()
 
     return cors_response(event_collection_payload(event), status=201)
 
@@ -261,8 +283,9 @@ def event_detail(request, event_id):
     if request.method == "OPTIONS":
         return cors_response({})
 
-    event = Event.objects.prefetch_related("tiers").filter(id=event_id).first()
-    if not event:
+    try:
+        event = Event.objects.get(id=ObjectId(event_id))
+    except (DoesNotExist, ValueError):
         return cors_response({"error": "Event not found"}, status=404)
 
     if request.method == "DELETE":
@@ -283,39 +306,31 @@ def event_detail(request, event_id):
     if not valid_levels:
         return cors_response({"error": "Add at least one booking level"}, status=400)
 
-    with transaction.atomic():
-        event.name = data["name"]
-        event.date = data["date"]
-        event.venue = data["venue"]
-        event.capacity = capacity
-        event.price = price
-        event.image = data.get("image") or event.image or Event._meta.get_field("image").default
-        event.save()
+    try:
+        event_date = datetime.fromisoformat(data["date"]) if isinstance(data["date"], str) else data["date"]
+    except (ValueError, TypeError):
+        return cors_response({"error": "Invalid event date"}, status=400)
 
-        kept_tier_ids = []
-        existing_tiers = {tier.id: tier for tier in event.tiers.all()}
-        for level in valid_levels:
-            level_id = level.get("id")
-            tier = existing_tiers.get(level_id) if level_id else None
-            if tier:
-                tier.name = level["name"]
-                tier.price = int(level["price"])
-                tier.capacity = max(int(level["capacity"]), tier.sold)
-                tier.save()
-            else:
-                tier = TicketTier.objects.create(
-                    event=event,
-                    name=level["name"],
-                    price=int(level["price"]),
-                    capacity=int(level["capacity"]),
-                )
-            kept_tier_ids.append(tier.id)
+    event.name = data["name"]
+    event.date = event_date
+    event.venue = data["venue"]
+    event.capacity = capacity
+    event.price = price
+    event.image = data.get("image") or event.image
 
-        for tier in event.tiers.exclude(id__in=kept_tier_ids):
-            if tier.sold == 0 and not tier.tickets.exists():
-                tier.delete()
+    # Update tiers
+    tiers = []
+    for level in valid_levels:
+        tier = TicketTier(
+            name=level["name"],
+            price=int(level["price"]),
+            capacity=max(int(level["capacity"]), 0),
+        )
+        tiers.append(tier)
+    
+    event.tiers = tiers
+    event.save()
 
-    event = Event.objects.prefetch_related("tiers").get(id=event.id)
     return cors_response(event_collection_payload(event))
 
 
@@ -324,14 +339,26 @@ def book_tickets(request, event_id):
     if request.method == "OPTIONS":
         return cors_response({})
 
-    event = Event.objects.prefetch_related("tiers").filter(id=event_id).first()
-    if not event:
+    try:
+        event = Event.objects.get(id=ObjectId(event_id))
+    except (DoesNotExist, ValueError):
         return cors_response({"error": "Event not found"}, status=404)
 
     data = parse_body(request)
     tickets = max(1, int(data.get("tickets", 1)))
     tier_name = data.get("tierName")
-    selected_tier = event.tiers.filter(name=tier_name).first() or event.tiers.first()
+    
+    # Find the selected tier
+    selected_tier = None
+    if tier_name and event.tiers:
+        for tier in event.tiers:
+            if tier.name == tier_name:
+                selected_tier = tier
+                break
+    
+    if not selected_tier and event.tiers:
+        selected_tier = event.tiers[0]
+    
     if not selected_tier:
         return cors_response({"error": "No booking levels found for this event"}, status=400)
 
@@ -341,19 +368,19 @@ def book_tickets(request, event_id):
         return cors_response({"error": "Selected booking level is sold out"}, status=400)
 
     selected_tier.sold += booked
-    selected_tier.save()
+    event.save()
 
     ticket = Ticket.objects.create(
-        ticket_id=f"EVT-{event.id}-{random.randint(10000, 99999)}",
+        ticket_id=f"EVT-{event_id}-{random.randint(10000, 99999)}",
         event=event,
-        tier=selected_tier,
+        tier_name=selected_tier.name,
         attendee_name=data.get("name") or "Walk-in guest",
         quantity=booked,
         amount=booked * selected_tier.price,
-        qr_code=f"QR-{event.id}-{random.randint(100000, 999999)}",
+        qr_code=f"QR-{event_id}-{random.randint(100000, 999999)}",
     )
 
-    event_items = Event.objects.prefetch_related("tiers")
+    event_items = list(Event.objects.all())
     return cors_response({
         "event": serialize_event(event),
         "events": [serialize_event(item) for item in event_items],
@@ -368,29 +395,35 @@ def check_in(request, event_id):
     if request.method == "OPTIONS":
         return cors_response({})
 
-    event = Event.objects.filter(id=event_id).first()
-    if not event:
+    try:
+        event = Event.objects.get(id=ObjectId(event_id))
+    except (DoesNotExist, ValueError):
         return cors_response({"error": "Event not found"}, status=404)
 
-    if event.date > date.today():
+    if event.date.date() > date.today():
         return cors_response({"error": "QR scan opens only on the event date"}, status=400)
 
     data = parse_body(request)
     scan_code = (data.get("scanCode") or "").strip()
-    ticket = Ticket.objects.filter(event=event, qr_code=scan_code).first()
-    if not ticket:
-        ticket = Ticket.objects.filter(event=event, ticket_id=scan_code).first()
-    if not ticket:
-        return cors_response({"error": "Ticket QR code was not found for this event"}, status=404)
+    
+    ticket = None
+    try:
+        ticket = Ticket.objects.get(event=event, qr_code=scan_code)
+    except DoesNotExist:
+        try:
+            ticket = Ticket.objects.get(event=event, ticket_id=scan_code)
+        except DoesNotExist:
+            return cors_response({"error": "Ticket QR code was not found for this event"}, status=404)
+
     if ticket.checked_in:
         return cors_response({"error": "This ticket is already checked in"}, status=400)
 
     ticket.checked_in = True
     ticket.save()
-    event.checked_in = min(event.checked_in + ticket.quantity, event.tickets_sold)
+    event.checked_in = min(event.checked_in + ticket.quantity, sum(t.sold for t in event.tiers))
     event.save()
 
-    event_items = Event.objects.prefetch_related("tiers")
+    event_items = list(Event.objects.all())
     return cors_response({
         "event": serialize_event(event),
         "events": [serialize_event(item) for item in event_items],
@@ -399,7 +432,7 @@ def check_in(request, event_id):
 
 
 def live_counts(request):
-    event_items = Event.objects.prefetch_related("tiers")
+    event_items = list(Event.objects.all())
     return cors_response({
         "events": [serialize_event(event) for event in event_items],
         "totals": event_totals(event_items),

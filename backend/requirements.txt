@@ -1,0 +1,6 @@
+Django
+mongoengine
+dnspython
+gunicorn
+whitenoise
+pymongo

@@ -19,13 +19,17 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "eventflow.urls"
 
+# MongoDB Connection via mongoengine
+import mongoengine as me
+me.connect(
+    db="eventflow",
+    host="mongodb+srv://likithaalahari03_db_user:likitha%40_@cluster0.bzw7hac.mongodb.net/?appName=Cluster0"
+)
+
 DATABASES = {
     "default": {
-        "ENGINE": "djongo",
-        "NAME": "eventflow",
-        "CLIENT": {
-            "host": "mongodb+srv://likithaalahari03_db_user:likitha%40_@cluster0.bzw7hac.mongodb.net/?appName=Cluster0",
-        },
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
 }
 

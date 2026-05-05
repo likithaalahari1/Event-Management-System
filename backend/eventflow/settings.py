@@ -21,8 +21,11 @@ ROOT_URLCONF = "eventflow.urls"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "djongo",
+        "NAME": "eventflow",
+        "CLIENT": {
+            "host": "mongodb+srv://likithaalahari03_db_user:likitha%40_@cluster0.bzw7hac.mongodb.net/?appName=Cluster0",
+        },
     }
 }
 

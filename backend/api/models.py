@@ -26,7 +26,15 @@ class AppUser(me.Document):
     def __str__(self):
         return self.email
 
+class TicketTier(me.EmbeddedDocument):
+    id = me.ObjectIdField(default=ObjectId)
+    name = me.StringField(required=True, max_length=80)
+    price = me.IntField(required=True)
+    capacity = me.IntField(required=True)
+    sold = me.IntField(default=0)
 
+    def __str__(self):
+        return f"{self.name}"
 class Event(me.Document):
     name = me.StringField(required=True, max_length=160)
     date = me.DateTimeField(required=True)
@@ -61,15 +69,7 @@ class Event(me.Document):
         return self.name
 
 
-class TicketTier(me.EmbeddedDocument):
-    id = me.ObjectIdField(default=ObjectId)
-    name = me.StringField(required=True, max_length=80)
-    price = me.IntField(required=True)
-    capacity = me.IntField(required=True)
-    sold = me.IntField(default=0)
 
-    def __str__(self):
-        return f"{self.name}"
 
 
 class Ticket(me.Document):

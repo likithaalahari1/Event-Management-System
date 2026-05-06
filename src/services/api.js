@@ -65,6 +65,10 @@ export function bookTickets(eventId, bookingData) {
   });
 }
 
+export function getBookedTickets() {
+  return request('/tickets/booked/');
+}
+
 export function checkInGuest(eventId, scanCode) {
   return request(`/events/${eventId}/checkin/`, {
     method: 'POST',

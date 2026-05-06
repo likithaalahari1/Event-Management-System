@@ -55,6 +55,35 @@ button {
   animation: fadeInUp 320ms ease both;
 }
 
+.home-page,
+.page-shell,
+.hero-content,
+.booking-card,
+.event-row,
+.metrics-grid article,
+.home-feature-grid article,
+.stats-strip article {
+  animation: fadeInUp 380ms ease both;
+}
+
+.booking-card:nth-child(2),
+.home-feature-grid article:nth-child(2),
+.stats-strip article:nth-child(2) {
+  animation-delay: 55ms;
+}
+
+.booking-card:nth-child(3),
+.home-feature-grid article:nth-child(3),
+.stats-strip article:nth-child(3) {
+  animation-delay: 110ms;
+}
+
+.booking-card:nth-child(4),
+.home-feature-grid article:nth-child(4),
+.stats-strip article:nth-child(4) {
+  animation-delay: 165ms;
+}
+
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -203,6 +232,7 @@ button {
   }
 
   .auth-header-links button {
+    color: var(--ink);
     justify-content: flex-start;
     width: 100%;
   }
@@ -359,6 +389,14 @@ button {
   font-size: 0.95rem;
   letter-spacing: 0.01em;
   color: var(--muted);
+}
+
+.ticket-id-value,
+.ticket-qr-wrap strong {
+  line-height: 1.35;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .nav-actions .profile-logout-button {
@@ -1478,6 +1516,7 @@ select:focus {
   background: rgba(255, 255, 255, 0.14);
   border: 1px solid rgba(255, 255, 255, 0.26);
   border-radius: 8px;
+  max-width: 260px;
   min-width: 190px;
   padding: 16px;
 }
@@ -1963,6 +2002,23 @@ select:focus {
 
   .nav-actions {
     justify-content: flex-start;
+    width: 100%;
+  }
+
+  .profile-menu {
+    position: static;
+  }
+
+  .profile-panel {
+    left: 14px;
+    max-height: calc(100vh - 28px);
+    min-width: 0;
+    overflow-y: auto;
+    position: fixed;
+    right: 14px;
+    top: 14px;
+    width: auto;
+    z-index: 40;
   }
 
   .metrics-grid,
@@ -1992,12 +2048,31 @@ select:focus {
     flex-direction: column;
   }
 
+  .ticket-id {
+    max-width: 100%;
+    min-width: 0;
+    width: 100%;
+  }
+
   .capacity-ring {
     flex-basis: 118px;
   }
 }
 
 @media (max-width: 520px) {
+  .public-home-header {
+    align-items: flex-start;
+  }
+
+  .auth-header-actions {
+    flex: 1;
+    justify-content: flex-end;
+  }
+
+  .auth-header-links {
+    right: 0;
+  }
+
   .nav-actions button {
     min-height: 38px;
     padding-inline: 12px;

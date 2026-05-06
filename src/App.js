@@ -14,6 +14,7 @@ import {
   checkInGuest,
   createEvent,
   deleteEvent,
+  getBookedTickets,
   getEvents,
   getLiveCounts,
   loginUser,
@@ -368,16 +369,6 @@ function HomePage({
               </button>
               <button
                 onClick={() => {
-                  onChooseMode('login');
-                  onChooseRole('admin');
-                  setIsNavOpen(false);
-                }}
-                type="button"
-              >
-                Admin login
-              </button>
-              <button
-                onClick={() => {
                   onOpenQrScan();
                   setIsNavOpen(false);
                 }}
@@ -563,6 +554,23 @@ function App() {
 
     loadEvents();
   }, []);
+
+  useEffect(() => {
+    async function loadBookedTickets() {
+      try {
+        const data = await getBookedTickets();
+        setBookedTickets(data.tickets || []);
+      } catch (error) {
+        setBookedTickets([]);
+      }
+    }
+
+    if (isAuthenticated) {
+      loadBookedTickets();
+    } else {
+      setBookedTickets([]);
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const activeEvent = events.find((event) => event.id === activeEventId) || events[0];

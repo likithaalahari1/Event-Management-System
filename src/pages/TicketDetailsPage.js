@@ -30,7 +30,7 @@ function TicketDetailsPage({ latestTicket, setPage }) {
           </div>
           <div className="ticket-id">
             <span>Ticket ID</span>
-            <strong>{latestTicket.id}</strong>
+            <strong className="ticket-id-value">{latestTicket.id}</strong>
           </div>
         </div>
 

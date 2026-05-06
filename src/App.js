@@ -322,6 +322,8 @@ function HomePage({
   onOpenQrScan,
   setPage,
 }) {
+  const [isNavOpen, setIsNavOpen] = useState(false);
+
   const highlights = [
     ['Smart event creation', 'Build events with venues, dates, capacity, ticket tiers, and images from one polished workspace.'],
     ['Ticket booking', 'Book tickets quickly and keep every recent booking visible for smooth front-desk coordination.'],
@@ -337,9 +339,53 @@ function HomePage({
             <img src={eventFlowLogo} alt="EventFlow" />
           </button>
           <div className="auth-header-actions">
-            <button onClick={() => onChooseMode('login')} type="button">Login</button>
-            <button onClick={() => onChooseMode('signup')} type="button">Sign up</button>
-            <button onClick={onOpenQrScan} type="button">QR Scan</button>
+            <button
+              className="menu-toggle"
+              aria-expanded={isNavOpen}
+              onClick={() => setIsNavOpen((current) => !current)}
+              type="button"
+            >
+              Menu
+            </button>
+            <div className={`auth-header-links ${isNavOpen ? 'open' : ''}`}>
+              <button
+                onClick={() => {
+                  onChooseMode('login');
+                  setIsNavOpen(false);
+                }}
+                type="button"
+              >
+                Login
+              </button>
+              <button
+                onClick={() => {
+                  onChooseMode('signup');
+                  setIsNavOpen(false);
+                }}
+                type="button"
+              >
+                Sign up
+              </button>
+              <button
+                onClick={() => {
+                  onChooseMode('login');
+                  onChooseRole('admin');
+                  setIsNavOpen(false);
+                }}
+                type="button"
+              >
+                Admin login
+              </button>
+              <button
+                onClick={() => {
+                  onOpenQrScan();
+                  setIsNavOpen(false);
+                }}
+                type="button"
+              >
+                QR Scan
+              </button>
+            </div>
           </div>
         </header>
       )}
@@ -879,7 +925,6 @@ function App() {
                       <strong>{authUser?.dateOfBirth || 'Not added'}</strong>
                     </div>
                   </div>
-                  {isUserAccount && (
                     <button
                       className="profile-booked-button"
                       onClick={() => {
@@ -890,7 +935,6 @@ function App() {
                     >
                       Booked tickets
                     </button>
-                  )}
                   <button className="profile-logout-button" onClick={handleLogout} type="button">
                     Logout
                   </button>

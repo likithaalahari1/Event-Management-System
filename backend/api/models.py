@@ -35,6 +35,7 @@ class TicketTier(me.EmbeddedDocument):
     def __str__(self):
         return f"{self.name}"
 
+
 class Event(me.Document):
     name = me.StringField(required=True, max_length=160)
     date = me.DateTimeField(required=True)

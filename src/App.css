@@ -1983,6 +1983,7 @@ select:focus {
   .tickets-layout,
   .two-column,
   .booking-card-grid,
+  .booked-ticket-grid,
   .home-intro,
   .split-section,
   .home-image-band {
@@ -1995,14 +1996,44 @@ select:focus {
 }
 
 @media (max-width: 760px) {
+  body {
+    min-width: 320px;
+  }
+
+  .app-shell,
+  .public-home-shell {
+    width: 100%;
+  }
+
+  .hero-panel {
+    min-height: 300px;
+  }
+
   .topbar {
-    align-items: flex-start;
-    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 16px;
   }
 
   .nav-actions {
+    display: grid;
+    flex: 1;
+    gap: 8px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     justify-content: flex-start;
     width: 100%;
+  }
+
+  .nav-actions button {
+    border-radius: 8px;
+    justify-content: center;
+    min-width: 0;
+    padding: 10px;
+    text-align: center;
+  }
+
+  .nav-actions .profile-icon-button {
+    justify-self: end;
   }
 
   .profile-menu {
@@ -2021,6 +2052,10 @@ select:focus {
     z-index: 40;
   }
 
+  .hero-content {
+    padding: 0 16px 28px;
+  }
+
   .metrics-grid,
   .live-panel,
   .form-row,
@@ -2035,6 +2070,19 @@ select:focus {
     grid-template-columns: 1fr;
   }
 
+  .page-shell {
+    gap: 18px;
+    padding: 16px;
+  }
+
+  .page-card,
+  .create-panel,
+  .tool-panel,
+  .live-panel,
+  .data-card {
+    width: 100%;
+  }
+
   .auth-header {
     align-items: flex-start;
   }
@@ -2042,10 +2090,37 @@ select:focus {
   .active-event-card {
     align-items: flex-start;
     flex-direction: column;
+    gap: 18px;
+    min-height: 0;
+  }
+
+  .active-event-card h2 {
+    font-size: clamp(1.75rem, 10vw, 2.6rem);
+  }
+
+  .capacity-ring {
+    flex-basis: 118px;
+    width: 118px;
+  }
+
+  .overview-heading,
+  .ticket-summary,
+  .creator-preview,
+  .booked-ticket-meta,
+  .booking-card-meta,
+  .tier-list article > div:first-child,
+  .signal-list span {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .overview-heading {
+    gap: 8px;
   }
 
   .ticket-main {
     flex-direction: column;
+    gap: 16px;
   }
 
   .ticket-id {
@@ -2054,12 +2129,31 @@ select:focus {
     width: 100%;
   }
 
-  .capacity-ring {
-    flex-basis: 118px;
+  .ticket-grid,
+  .ticket-qr-wrap {
+    padding: 16px;
+  }
+
+  .ticket-qr-wrap {
+    justify-items: center;
+    text-align: center;
+  }
+
+  .booking-side-actions,
+  .qr-camera-actions {
+    grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 520px) {
+  .public-home-shell {
+    padding: 12px;
+  }
+
+  .home-page {
+    gap: 14px;
+  }
+
   .public-home-header {
     align-items: flex-start;
   }
@@ -2071,6 +2165,38 @@ select:focus {
 
   .auth-header-links {
     right: 0;
+    top: 54px;
+  }
+
+  .brand-mark,
+  .auth-brand {
+    height: 50px;
+    min-width: 50px;
+    width: 50px;
+  }
+
+  .brand-mark img,
+  .auth-brand img {
+    height: 40px;
+    width: 40px;
+  }
+
+  .hero-panel {
+    min-height: 250px;
+  }
+
+  .topbar {
+    align-items: flex-start;
+    padding: 12px;
+  }
+
+  .app-shell .topbar {
+    display: grid;
+    grid-template-columns: auto 1fr;
+  }
+
+  .app-shell .nav-actions {
+    grid-template-columns: 1fr;
   }
 
   .nav-actions button {
@@ -2083,7 +2209,82 @@ select:focus {
   }
 
   .page-shell {
+    gap: 14px;
+    padding: 12px;
+  }
+
+  .home-section,
+  .home-footer,
+  .active-event-card,
+  .tool-panel,
+  .create-panel,
+  .live-panel,
+  .data-card,
+  .overview-panel,
+  .booked-ticket-card {
+    padding: 16px;
+  }
+
+  .home-intro img {
+    height: 132px;
+    width: 132px;
+  }
+
+  .home-image-band img,
+  .image-split img,
+  .booking-event-image {
+    min-height: 0;
+  }
+
+  .home-footer {
+    align-items: flex-start;
+  }
+
+  .auth-card {
+    max-height: calc(100vh - 24px);
+    padding: 18px;
+  }
+
+  .auth-form-logo {
+    height: 86px;
+    width: 86px;
+  }
+
+  .auth-role-tabs {
+    grid-template-columns: 1fr;
+  }
+
+  input,
+  select,
+  .wide-button,
+  .add-level-button,
+  .remove-level-button,
+  .secondary-button {
+    min-height: 46px;
+  }
+
+  .metrics-grid article,
+  .home-feature-grid article,
+  .stats-strip article,
+  .ticket-grid article,
+  .tier-list article,
+  .schedule-list article,
+  .booking-feed article,
+  .gate-list article,
+  .signal-list span {
+    padding: 12px;
+  }
+
+  .booking-card-body {
     padding: 14px;
+  }
+
+  .qr-code {
+    width: min(100%, 190px);
+  }
+
+  .ticket-qr {
+    width: 150px;
   }
 
   .schedule-list article,

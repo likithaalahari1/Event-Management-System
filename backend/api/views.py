@@ -80,6 +80,29 @@ def serialize_ticket(ticket):
     }
 
 
+def event_code(event):
+    words = [word for word in event.name.upper().replace("-", " ").split() if word]
+    initials = "".join(word[0] for word in words[:3]) or "EVT"
+    date_part = event.date.strftime("%d%m") if hasattr(event.date, "strftime") else "0000"
+    return f"{initials[:4]}-{date_part}"
+
+
+def unique_ticket_code(event, prefix):
+    for _ in range(20):
+        code = f"{prefix}-{random.randint(1000, 9999)}"
+        if not Ticket.objects(ticket_id=code).first():
+            return code
+    return f"{prefix}-{random.randint(10000, 99999)}"
+
+
+def unique_qr_code(event, prefix):
+    for _ in range(20):
+        code = f"QR-{prefix}-{random.randint(1000, 9999)}"
+        if not Ticket.objects(qr_code=code).first():
+            return code
+    return f"QR-{prefix}-{random.randint(10000, 99999)}"
+
+
 def serialize_user(user):
     date_of_birth = user.date_of_birth
     return {
@@ -230,6 +253,16 @@ def events(request):
     })
 
 
+def booked_tickets(request):
+    if request.method == "OPTIONS":
+        return cors_response({})
+    if request.method != "GET":
+        return cors_response({"error": "GET required"}, status=405)
+
+    tickets = Ticket.objects.order_by("-created_at")
+    return cors_response({"tickets": [serialize_ticket(ticket) for ticket in tickets]})
+
+
 @csrf_exempt
 def create_event(request):
     if request.method == "OPTIONS":
@@ -370,14 +403,15 @@ def book_tickets(request, event_id):
     selected_tier.sold += booked
     event.save()
 
+    code_prefix = event_code(event)
     ticket = Ticket.objects.create(
-        ticket_id=f"EVT-{event_id}-{random.randint(10000, 99999)}",
+        ticket_id=unique_ticket_code(event, code_prefix),
         event=event,
         tier_name=selected_tier.name,
         attendee_name=data.get("name") or "Walk-in guest",
         quantity=booked,
         amount=booked * selected_tier.price,
-        qr_code=f"QR-{event_id}-{random.randint(100000, 999999)}",
+        qr_code=unique_qr_code(event, code_prefix),
     )
 
     event_items = list(Event.objects.all())

@@ -17,7 +17,7 @@ function EventSelector({ activeEvent, events, setActiveEventId }) {
 
         return (
           <button
-            className={`event-row ${event.id === activeEvent.id ? 'active' : ''}`}
+            className={`event-row ${event.id === activeEvent?.id ? 'active' : ''}`}
             key={event.id}
             onClick={() => setActiveEventId(event.id)}
             type="button"

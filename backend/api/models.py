@@ -25,7 +25,15 @@ class AppUser(me.Document):
 
     def __str__(self):
         return self.email
+class TicketTier(me.EmbeddedDocument):
+    id = me.ObjectIdField(default=ObjectId)
+    name = me.StringField(required=True, max_length=80)
+    price = me.IntField(required=True)
+    capacity = me.IntField(required=True)
+    sold = me.IntField(default=0)
 
+    def __str__(self):
+        return f"{self.name}"
 
 class Event(me.Document):
     name = me.StringField(required=True, max_length=160)
@@ -34,13 +42,18 @@ class Event(me.Document):
     category = me.StringField(max_length=80, default="Private Event")
     capacity = me.IntField(required=True)
     price = me.IntField(required=True)
+
+    tiers = me.EmbeddedDocumentListField("TicketTier", default=[])
+
     checked_in = me.IntField(default=0)
     vip_guests = me.IntField(default=0)
     waitlist = me.IntField(default=0)
     rating = me.FloatField(default=0)
     accent = me.StringField(max_length=24, default="#b8894f")
     status = me.StringField(max_length=80, default="Draft live")
-    image = me.StringField(default="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1600&q=85")
+    image = me.StringField(
+        default="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1600&q=85"
+    )
     created_at = me.DateTimeField(default=datetime.utcnow)
 
     meta = {
@@ -54,17 +67,6 @@ class Event(me.Document):
 
     def __str__(self):
         return self.name
-
-
-class TicketTier(me.EmbeddedDocument):
-    id = me.ObjectIdField(default=ObjectId)
-    name = me.StringField(required=True, max_length=80)
-    price = me.IntField(required=True)
-    capacity = me.IntField(required=True)
-    sold = me.IntField(default=0)
-
-    def __str__(self):
-        return f"{self.name}"
 
 
 class Ticket(me.Document):

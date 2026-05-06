@@ -1,9 +1,18 @@
 export function formatDate(date) {
+  if (!date) {
+    return '';
+  }
+
+  const parsedDate = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return String(date);
+  }
+
   return new Intl.DateTimeFormat('en-IN', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
-  }).format(new Date(`${date}T00:00:00`));
+  }).format(parsedDate);
 }
 
 export function calculateTotals(events) {

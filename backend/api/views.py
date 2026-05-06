@@ -69,6 +69,7 @@ def serialize_event(event):
 def serialize_ticket(ticket):
     return {
         "id": ticket.ticket_id,
+        "userId": str(ticket.user.id) if ticket.user else "",
         "attendeeName": ticket.attendee_name,
         "eventName": ticket.event.name,
         "venue": ticket.event.venue,
@@ -259,7 +260,16 @@ def booked_tickets(request):
     if request.method != "GET":
         return cors_response({"error": "GET required"}, status=405)
 
-    tickets = Ticket.objects.order_by("-created_at")
+    user_id = request.GET.get("userId", "").strip()
+    if not user_id:
+        return cors_response({"tickets": []})
+
+    try:
+        user = AppUser.objects.get(id=ObjectId(user_id))
+    except (DoesNotExist, ValueError):
+        return cors_response({"tickets": []})
+
+    tickets = Ticket.objects(user=user).order_by("-created_at")
     return cors_response({"tickets": [serialize_ticket(ticket) for ticket in tickets]})
 
 
@@ -380,6 +390,13 @@ def book_tickets(request, event_id):
     data = parse_body(request)
     tickets = max(1, int(data.get("tickets", 1)))
     tier_name = data.get("tierName")
+    user = None
+    user_id = (data.get("userId") or "").strip()
+    if user_id:
+        try:
+            user = AppUser.objects.get(id=ObjectId(user_id))
+        except (DoesNotExist, ValueError):
+            user = None
     
     # Find the selected tier
     selected_tier = None
@@ -407,6 +424,7 @@ def book_tickets(request, event_id):
     ticket = Ticket.objects.create(
         ticket_id=unique_ticket_code(event, code_prefix),
         event=event,
+        user=user,
         tier_name=selected_tier.name,
         attendee_name=data.get("name") or "Walk-in guest",
         quantity=booked,

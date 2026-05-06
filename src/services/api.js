@@ -65,8 +65,9 @@ export function bookTickets(eventId, bookingData) {
   });
 }
 
-export function getBookedTickets() {
-  return request('/tickets/booked/');
+export function getBookedTickets(userId) {
+  const query = userId ? `?userId=${encodeURIComponent(userId)}` : '';
+  return request(`/tickets/booked/${query}`);
 }
 
 export function checkInGuest(eventId, scanCode) {

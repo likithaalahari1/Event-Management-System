@@ -73,6 +73,7 @@ class Event(me.Document):
 class Ticket(me.Document):
     ticket_id = me.StringField(unique=True, required=True, max_length=40)
     event = me.ReferenceField(Event, required=True)
+    user = me.ReferenceField(AppUser, null=True)
     tier_name = me.StringField(required=True, max_length=80)
     attendee_name = me.StringField(required=True, max_length=120)
     quantity = me.IntField(default=1)

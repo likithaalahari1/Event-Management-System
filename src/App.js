@@ -558,19 +558,19 @@ function App() {
   useEffect(() => {
     async function loadBookedTickets() {
       try {
-        const data = await getBookedTickets();
+        const data = await getBookedTickets(authUser?.id);
         setBookedTickets(data.tickets || []);
       } catch (error) {
         setBookedTickets([]);
       }
     }
 
-    if (isAuthenticated) {
+    if (isAuthenticated && authUser?.id) {
       loadBookedTickets();
     } else {
       setBookedTickets([]);
     }
-  }, [isAuthenticated]);
+  }, [authUser?.id, isAuthenticated]);
 
   useEffect(() => {
     const activeEvent = events.find((event) => event.id === activeEventId) || events[0];
@@ -733,6 +733,7 @@ function App() {
         name: bookingName,
         tickets: Number(ticketCount),
         tierName: selectedTicketTier,
+        userId: authUser?.id,
       });
       setEvents(data.events);
       setBookings(data.recentBookings);

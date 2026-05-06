@@ -7,6 +7,7 @@ function TicketBookingPage({
   activeEvent,
   bookingName,
   bookings,
+  bookingError,
   events,
   handleBooking,
   setActiveEventId,
@@ -152,6 +153,7 @@ function TicketBookingPage({
           <span>Selected pass</span>
           <strong>{currentTier?.name || 'General'} - Rs {ticketPrice.toLocaleString('en-IN')}</strong>
         </div>
+        {bookingError && <p className="form-message">{bookingError}</p>}
         <label>
           Attendee name
           <input

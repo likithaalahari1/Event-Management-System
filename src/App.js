@@ -487,6 +487,7 @@ function App() {
   const [scanCode, setScanCode] = useState('EVT-26-1048');
   const [scanMessage, setScanMessage] = useState('');
   const [formMessage, setFormMessage] = useState('');
+  const [bookingError, setBookingError] = useState('');
   const [editingEventId, setEditingEventId] = useState(null);
   const [createdEvent, setCreatedEvent] = useState({
     name: '',
@@ -666,8 +667,10 @@ function App() {
 
   async function handleBooking(event) {
     event.preventDefault();
+    setBookingError('');
 
     if (!activeEvent) {
+      setBookingError('No active event selected for booking.');
       return;
     }
 
@@ -684,6 +687,8 @@ function App() {
       setBookingName('');
       setPage('ticket');
     } catch (error) {
+      console.error(error);
+      setBookingError(error.message || 'Booking failed. Please try again.');
     }
   }
 
@@ -943,6 +948,7 @@ function App() {
             setSelectedTicketTier={setSelectedTicketTier}
             setTicketCount={setTicketCount}
             ticketCount={ticketCount}
+            bookingError={bookingError}
           />
         )}
 

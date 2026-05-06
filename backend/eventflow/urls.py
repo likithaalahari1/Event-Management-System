@@ -10,5 +10,6 @@ def health_check(request):
 
 urlpatterns = [
     path("", health_check),
+    path("", include("api.urls")),
     path("api/", include("api.urls")),
 ]

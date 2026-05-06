@@ -2010,18 +2010,27 @@ select:focus {
   }
 
   .topbar {
-    align-items: center;
+    align-items: stretch;
+    flex-direction: column;
     gap: 14px;
     padding: 16px;
   }
 
+  .brand-mark {
+    align-self: flex-start;
+  }
+
   .nav-actions {
     display: grid;
-    flex: 1;
     gap: 8px;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     justify-content: flex-start;
     width: 100%;
+  }
+
+  .user-nav-actions {
+    align-items: center;
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
   .nav-actions button {
@@ -2037,6 +2046,9 @@ select:focus {
   }
 
   .profile-menu {
+    display: flex;
+    justify-content: flex-end;
+    min-width: 46px;
     position: static;
   }
 
@@ -2186,17 +2198,12 @@ select:focus {
   }
 
   .topbar {
-    align-items: flex-start;
+    align-items: stretch;
     padding: 12px;
   }
 
   .app-shell .topbar {
-    display: grid;
-    grid-template-columns: auto 1fr;
-  }
-
-  .app-shell .nav-actions {
-    grid-template-columns: 1fr;
+    display: flex;
   }
 
   .nav-actions button {

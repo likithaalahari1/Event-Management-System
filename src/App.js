@@ -878,7 +878,7 @@ function App() {
           <button className="brand-mark" onClick={() => setPage('dashboard')} type="button">
             <img src={eventFlowLogo} alt="EventFlow" />
           </button>
-          <div className="nav-actions">
+          <div className={`nav-actions ${isUserAccount ? 'user-nav-actions' : ''}`}>
             {visiblePages.map((item) => (
               <button
                 className={page === item.id ? 'active' : ''}
